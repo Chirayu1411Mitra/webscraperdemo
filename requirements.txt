@@ -1,0 +1,8 @@
+duckduckgo-search>=5.0.0
+newspaper3k
+pandas
+requests
+flask
+googlenewsdecoder
+lxml[html_clean]
+gnews

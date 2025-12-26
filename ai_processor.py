@@ -19,8 +19,9 @@ class NewsFilter:
         
         for article in articles:
             text = article.get('text', '')
-            if not text or len(text.split()) < 50:
-                # Skip very short articles
+            if not text or len(text.split()) < 10:
+                # Skip only completely empty or extremely short (broken) articles
+                print(f"Skipping article with insufficient text: {len(text.split())} words.")
                 continue
                 
             try:

@@ -14,3 +14,4 @@ env/
 data/
 *.json
 *.log
+presentation_details.md

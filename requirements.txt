@@ -6,3 +6,5 @@ flask
 googlenewsdecoder
 lxml[html_clean]
 gnews
+transformers
+torch

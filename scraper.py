@@ -76,9 +76,9 @@ def fetch_news(keyword, max_results=5):
                     logger.warning(f"Failed to create article object for {target_url}")
                     continue
 
-                # Check for minimum content length
-                if len(article.text) < 100:
-                    logger.warning(f"Skipping short content from {url}")
+                # Check for empty content (e.g. paywall or failed scrape)
+                if not article.text or len(article.text.strip()) == 0:
+                    logger.warning(f"Skipping empty content from {url}")
                     continue
 
                 articles_data.append({

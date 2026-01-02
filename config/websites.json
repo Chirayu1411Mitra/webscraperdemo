@@ -1,0 +1,30 @@
+{
+  "version": "1.0",
+  "websites": [
+    {
+      "name": "Aljazeera Pakistan",
+      "domain": "aljazeera.com",
+      "sitemap": "",
+      "enabled": true
+    },
+    {
+      "name": "Pakistan Times",
+      "domain": "pakistantimes.com",
+      "sitemap": "https://pakistantimes.com/news-sitemap.xml",
+      "enabled": true
+    },
+    {
+      "name": "Jang News (English)",
+      "domain": "jang.com.pk",
+      "sitemap": "https://jang.com.pk/en/sitemap/google_eng_latest.xml",
+      "enabled": true
+    },
+    {
+      "name": "SOFREP",
+      "domain": "sofrep.com",
+      "sitemap": "https://sofrep.com/sitemap_index.xml",
+      "enabled": true
+    }
+    
+  ]
+}

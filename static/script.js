@@ -51,13 +51,41 @@ function displayResults(articles, keyword) {
         return;
     }
 
-    articles.forEach((article, index) => {
+    // Sort articles by date (newest first)
+    const sortedArticles = [...articles].sort((a, b) => {
+        const dateA = a.published_date ? new Date(a.published_date) : new Date(0);
+        const dateB = b.published_date ? new Date(b.published_date) : new Date(0);
+        return dateB - dateA; // Descending order (newest first)
+    });
+
+    sortedArticles.forEach((article, index) => {
         console.log(`Article ${index}:`, article);
         const card = document.createElement('div');
         card.className = 'card';
 
+        // Format date if available
+        let dateStr = '';
+        if (article.published_date) {
+            const date = new Date(article.published_date);
+            if (!isNaN(date)) {
+                dateStr = date.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+            }
+        }
+
+        // Get source name (capitalize first letter of domain)
+        const source = article.source || 'Unknown';
+        const sourceName = source.split('.')[0].charAt(0).toUpperCase() + source.split('.')[0].slice(1);
+
         const highlightParam = keyword ? `#:~:text=${encodeURIComponent(keyword)}` : '';
         card.innerHTML = `
+            <div class="card-header">
+                <span class="source-badge">${sourceName}</span>
+                ${dateStr ? `<span class="date-badge">${dateStr}</span>` : ''}
+            </div>
             <h3>${article.title || 'No title'}</h3>
             <p>${article.summary || 'No summary available'}</p>
             <a href="${(article.url || '#') + highlightParam}" target="_blank" class="read-more">Read Full Article →</a>

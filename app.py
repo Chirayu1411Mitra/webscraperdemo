@@ -7,6 +7,28 @@ from datetime import datetime
 
 app = Flask(__name__)
 
+# Load website configuration
+print("Loading website configuration...")
+try:
+    config_path = os.path.join(os.path.dirname(__file__), 'config', 'websites.json')
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = json.load(f)
+    WEBSITES = config.get('websites', [])
+    enabled_count = sum(1 for w in WEBSITES if w.get('enabled', True))
+    print(f"✓ Loaded {len(WEBSITES)} websites ({enabled_count} enabled)")
+    
+    # Show which sites use sitemap vs DuckDuckGo
+    sitemap_count = sum(1 for w in WEBSITES if w.get('enabled', True) and w.get('sitemap', '').strip())
+    ddg_count = enabled_count - sitemap_count
+    print(f"  • {sitemap_count} sites with sitemaps")
+    print(f"  • {ddg_count} sites using DuckDuckGo fallback")
+except FileNotFoundError:
+    print("⚠ Warning: config/websites.json not found. Using empty config.")
+    WEBSITES = []
+except Exception as e:
+    print(f"⚠ Error loading config: {e}")
+    WEBSITES = []
+
 # Initialize AI Model (lazy loading or global)
 # Loading it globally might take time on startup, but better for request speed.
 print("Initializing AI Model...")
@@ -28,7 +50,7 @@ def scrape():
     
     try:
         print(f"Received request for: {keyword}")
-        articles = fetch_news(keyword, max_results=int(count))
+        articles = fetch_news(keyword, WEBSITES, max_results=int(count))
         
         if not articles:
             return jsonify({'message': 'No articles found.'}), 404

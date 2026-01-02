@@ -1,10 +1,14 @@
-duckduckgo-search>=5.0.0
+# Search Engine
+ddgs
+
+# Article Scraping & Parsing
 newspaper3k
-pandas
 requests
-flask
-googlenewsdecoder
 lxml[html_clean]
-gnews
+
+# Web Framework
+Flask
+
+# AI Summarization
 transformers
 torch

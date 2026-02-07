@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Web Scraper</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 3rem;
+        }
+
+        .search-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-form {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .input-group {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 0.875rem 1.25rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        select option {
+            background: #667eea;
+            color: #fff;
+        }
+
+        button {
+            padding: 0.875rem 2.5rem;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+            align-self: flex-end;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .stats-panel {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .progress-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: none;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .results-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.4s ease;
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-url {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-bottom: 1rem;
+            word-break: break-all;
+            display: block;
+            color: #fff;
+            text-decoration: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .result-url:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .result-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            opacity: 0.95;
+        }
+
+        .status-message {
+            text-align: center;
+            padding: 2rem;
+            font-size: 1.1rem;
+            opacity: 0.8;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .connection-status.connected::before {
+            content: '🟢';
+            margin-right: 0.5rem;
+        }
+
+        .connection-status.disconnected::before {
+            content: '🔴';
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="connection-status disconnected">Connecting...</div>
+
+    <div class="container">
+        <h1>⚡ Real-Time Web Scraper</h1>
+        <p class="subtitle">See results instantly as they're scraped</p>
+
+        <div class="search-panel">
+            <form class="search-form" id="searchForm">
+                <div class="input-group">
+                    <label for="keyword">Search Keyword</label>
+                    <input type="text" id="keyword" placeholder="Enter keyword..." required>
+                </div>
+                <div class="input-group" style="flex: 0.5; min-width: 180px;">
+                    <label for="dateRange">Date Range</label>
+                    <select id="dateRange">
+                        <option value="d">Past 24 hours</option>
+                        <option value="w">Past week</option>
+                        <option value="m">Past month</option>
+                        <option value="y">Past year</option>
+                    </select>
+                </div>
+                <button type="submit" id="searchBtn">Search</button>
+            </form>
+        </div>
+
+        <div class="stats-panel">
+            <div class="stat-card">
+                <div class="stat-value" id="urlsFound">0</div>
+                <div class="stat-label">URLs Found</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="successfulScrapes">0</div>
+                <div class="stat-label">Successful Scrapes</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="elapsedTime">0.0s</div>
+                <div class="stat-label">Elapsed Time</div>
+            </div>
+        </div>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Initializing...</div>
+        </div>
+
+        <div class="results-container" id="resultsContainer">
+            <div class="status-message">Enter a keyword and click Search to begin</div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io('http://localhost:5000');
+
+        const searchForm = document.getElementById('searchForm');
+        const searchBtn = document.getElementById('searchBtn');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const connectionStatus = document.querySelector('.connection-status');
+
+        let startTime;
+        let timerInterval;
+
+        // Connection status
+        socket.on('connect', () => {
+            connectionStatus.textContent = 'Connected';
+            connectionStatus.className = 'connection-status connected';
+        });
+
+        socket.on('disconnect', () => {
+            connectionStatus.textContent = 'Disconnected';
+            connectionStatus.className = 'connection-status disconnected';
+        });
+
+        // Search form submission
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const keyword = document.getElementById('keyword').value.trim();
+            const dateRange = document.getElementById('dateRange').value;
+
+            if (!keyword) return;
+
+            // Reset UI
+            resultsContainer.innerHTML = '<div class="status-message"><span class="spinner"></span>Searching...</div>';
+            progressContainer.classList.add('active');
+            progressFill.style.width = '0%';
+            document.getElementById('urlsFound').textContent = '0';
+            document.getElementById('successfulScrapes').textContent = '0';
+            document.getElementById('elapsedTime').textContent = '0.0s';
+
+            searchBtn.disabled = true;
+            startTime = Date.now();
+
+            // Start timer
+            timerInterval = setInterval(() => {
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                document.getElementById('elapsedTime').textContent = elapsed + 's';
+            }, 100);
+
+            // Emit search request
+            socket.emit('start_scrape', { keyword, date_range: dateRange });
+        });
+
+        // WebSocket event handlers
+        socket.on('scrape_started', (data) => {
+            progressText.textContent = `Searching for "${data.keyword}"...`;
+        });
+
+        socket.on('urls_found', (data) => {
+            document.getElementById('urlsFound').textContent = data.count;
+            progressText.textContent = `Found ${data.count} URLs. Starting scrape...`;
+            resultsContainer.innerHTML = '';
+        });
+
+        socket.on('scrape_result', (data) => {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.innerHTML = `
+                <a href="${data.url}" target="_blank" class="result-url">${data.url}</a>
+                <div class="result-content">${data.content}</div>
+            `;
+            resultsContainer.appendChild(card);
+
+            const currentCount = parseInt(document.getElementById('successfulScrapes').textContent);
+            document.getElementById('successfulScrapes').textContent = currentCount + 1;
+        });
+
+        socket.on('scrape_progress', (data) => {
+            const percentage = (data.completed / data.total) * 100;
+            progressFill.style.width = percentage + '%';
+            progressText.textContent = `Scraping: ${data.completed} / ${data.total} URLs`;
+        });
+
+        socket.on('scrape_complete', (data) => {
+            clearInterval(timerInterval);
+            searchBtn.disabled = false;
+            progressContainer.classList.remove('active');
+
+            document.getElementById('elapsedTime').textContent = data.elapsed_time_seconds + 's';
+
+            // Only show "no results" if container is actually empty (no result cards)
+            if (resultsContainer.querySelectorAll('.result-card').length === 0) {
+                resultsContainer.innerHTML = '<div class="status-message">No results found with relevant content</div>';
+            }
+        });
+
+        socket.on('scrape_error', (data) => {
+            clearInterval(timerInterval);
+            searchBtn.disabled = false;
+            progressContainer.classList.remove('active');
+            resultsContainer.innerHTML = `<div class="status-message">❌ Error: ${data.message}</div>`;
+        });
+    </script>
+</body>
+
+</html>
